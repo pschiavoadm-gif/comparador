@@ -1,0 +1,5 @@
+{
+  "name": "Stock Comparator CD vs Web",
+  "description": "An intelligent tool to compare inventory between your Distribution Center and Web Store, identifying products to prioritize for online listing.",
+  "requestFramePermissions": []
+}
