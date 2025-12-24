@@ -13,7 +13,8 @@ import {
   RefreshCw,
   Hash,
   ShieldCheck,
-  LayoutList
+  LayoutList,
+  DollarSign
 } from 'lucide-react';
 import { StockItem, ColumnMapping } from './types';
 import { parseExcelFile, filterAndSortStock, exportToExcel } from './utils/excelUtils';
@@ -30,7 +31,8 @@ const App: React.FC = () => {
     id: '',
     name: '',
     cdStock: '',
-    webStock: ''
+    webStock: '',
+    salesAmount: ''
   });
   const [aiInsights, setAiInsights] = useState<string>('');
   const [generatingInsights, setGeneratingInsights] = useState(false);
@@ -53,7 +55,8 @@ const App: React.FC = () => {
           id: colE,
           name: colE,
           cdStock: '',
-          webStock: ''
+          webStock: '',
+          salesAmount: ''
         });
         setStep('mapping');
       }
@@ -65,8 +68,8 @@ const App: React.FC = () => {
   };
 
   const processComparison = () => {
-    if (!mapping.cdStock || !mapping.webStock) {
-      alert("Por favor selecciona las columnas de Stock CD y Stock Web.");
+    if (!mapping.cdStock || !mapping.webStock || !mapping.salesAmount) {
+      alert("Por favor selecciona las columnas de Stock CD, Stock Web y Ventas.");
       return;
     }
     const filtered = filterAndSortStock(data, mapping);
@@ -124,7 +127,7 @@ const App: React.FC = () => {
               </div>
               <h2 className="text-3xl font-extrabold mb-4 text-slate-800 tracking-tight">Comparador de Inventario</h2>
               <p className="text-slate-500 mb-10 text-lg max-w-md mx-auto leading-relaxed">
-                Sube el reporte para detectar productos con stock en <strong>CD</strong> sin presencia <strong>Web</strong>.
+                Detecta productos con stock en <strong>CD</strong> sin presencia <strong>Web</strong> incluyendo monto de ventas.
               </p>
               <label className="inline-flex items-center px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl cursor-pointer transition-all shadow-xl shadow-blue-200 active:scale-95">
                 <Upload className="w-6 h-6 mr-3" />
@@ -133,7 +136,7 @@ const App: React.FC = () => {
               </label>
               <div className="mt-12 flex justify-center gap-8 text-xs font-bold text-slate-400 uppercase tracking-widest">
                 <span className="flex items-center gap-1.5"><ShieldCheck className="w-4 h-4" /> Agrupa por SKU</span>
-                <span className="flex items-center gap-1.5"><Hash className="w-4 h-4" /> Filtra Totales</span>
+                <span className="flex items-center gap-1.5"><DollarSign className="w-4 h-4" /> Suma Ventas 30d</span>
               </div>
             </div>
           </div>
@@ -191,6 +194,21 @@ const App: React.FC = () => {
                     {headers.map((h, i) => <option key={h} value={h}>{`Col ${String.fromCharCode(65 + i)}: ${h}`}</option>)}
                   </select>
                 </div>
+
+                <div className="col-span-1 md:col-span-2 p-5 bg-green-50 rounded-2xl border border-green-200">
+                  <label className="block text-sm font-bold text-green-900 mb-3 uppercase tracking-wide flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-green-600" /> Ventas últimos 30 días (Monto)
+                  </label>
+                  <select 
+                    value={mapping.salesAmount} 
+                    onChange={(e) => setMapping({...mapping, salesAmount: e.target.value})}
+                    className="w-full rounded-xl border-green-200 bg-white focus:ring-green-500 font-medium p-3"
+                  >
+                    <option value="">Seleccionar columna de ventas...</option>
+                    {headers.map((h, i) => <option key={h} value={h}>{`Col ${String.fromCharCode(65 + i)}: ${h}`}</option>)}
+                  </select>
+                  <p className="mt-2 text-xs text-green-700 italic">Este valor se sumará por cada SKU idéntico.</p>
+                </div>
               </div>
 
               <button 
@@ -206,10 +224,16 @@ const App: React.FC = () => {
 
         {step === 'results' && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Artículos Detectados</p>
                 <p className="text-4xl font-black text-slate-900">{results.length}</p>
+              </div>
+              <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Ventas Perdidas (30d)</p>
+                <p className="text-4xl font-black text-green-600">
+                  ${results.reduce((acc, curr) => acc + curr.salesAmount, 0).toLocaleString()}
+                </p>
               </div>
               <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Stock en CD Total</p>
@@ -240,6 +264,7 @@ const App: React.FC = () => {
                         <tr className="bg-slate-50/30">
                           <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Cod SKU</th>
                           <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Descripción</th>
+                          <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Ventas 30d</th>
                           <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">En CD</th>
                           <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Web</th>
                         </tr>
@@ -250,6 +275,7 @@ const App: React.FC = () => {
                             <tr key={idx} className="hover:bg-blue-50/30 transition-colors">
                               <td className="px-8 py-5 text-sm font-mono font-bold text-blue-700">{item.id}</td>
                               <td className="px-8 py-5 text-sm font-bold text-slate-700">{item.name}</td>
+                              <td className="px-8 py-5 text-sm text-right font-black text-green-700">${item.salesAmount.toLocaleString()}</td>
                               <td className="px-8 py-5 text-sm text-right font-black text-slate-900">{item.cdStock.toLocaleString()}</td>
                               <td className="px-8 py-5 text-sm text-right">
                                 <span className="px-2 py-1 bg-red-100 text-red-700 rounded-lg text-[10px] font-black uppercase tracking-tighter">Faltante</span>
@@ -258,7 +284,7 @@ const App: React.FC = () => {
                           ))
                         ) : (
                           <tr>
-                            <td colSpan={4} className="px-8 py-20 text-center text-slate-400 font-medium">
+                            <td colSpan={5} className="px-8 py-20 text-center text-slate-400 font-medium">
                               <AlertCircle className="w-16 h-16 mx-auto mb-6 opacity-10" />
                               No se detectaron faltantes web con stock en CD.
                             </td>

@@ -4,6 +4,7 @@ export interface StockItem {
   name: string;
   cdStock: number;
   webStock: number;
+  salesAmount: number;
   category?: string;
   [key: string]: any;
 }
@@ -20,4 +21,5 @@ export interface ColumnMapping {
   name: string;
   cdStock: string;
   webStock: string;
+  salesAmount: string;
 }

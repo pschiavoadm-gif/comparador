@@ -69,11 +69,13 @@ export const filterAndSortStock = (data: any[], mapping: ColumnMapping): StockIt
 
     const currentCdStock = parseNumericValue(row[mapping.cdStock]);
     const currentWebStock = parseNumericValue(row[mapping.webStock]);
+    const currentSalesAmount = parseNumericValue(row[mapping.salesAmount]);
 
     if (aggregatedMap.has(processedId)) {
       const existing = aggregatedMap.get(processedId)!;
       existing.cdStock += currentCdStock;
       existing.webStock += currentWebStock;
+      existing.salesAmount += currentSalesAmount;
     } else {
       let name = row[mapping.name];
       if (mapping.id === mapping.name) {
@@ -84,7 +86,8 @@ export const filterAndSortStock = (data: any[], mapping: ColumnMapping): StockIt
         id: processedId,
         name: name || 'Sin Nombre',
         cdStock: currentCdStock,
-        webStock: currentWebStock
+        webStock: currentWebStock,
+        salesAmount: currentSalesAmount
       });
     }
   });
@@ -100,10 +103,11 @@ export const exportToExcel = (data: StockItem[]) => {
   const worksheet = XLSX.utils.json_to_sheet(data.map(item => ({
     'Código': item.id,
     'Producto': item.name,
+    'Ventas (30 días)': item.salesAmount,
     'Stock CD': item.cdStock,
     'Stock Web': item.webStock
   })));
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Reposicion");
-  XLSX.writeFile(workbook, "Stock_Faltante_Web.xlsx");
+  XLSX.writeFile(workbook, "Stock_Faltante_con_Ventas.xlsx");
 };
